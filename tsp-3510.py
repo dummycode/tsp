@@ -1,5 +1,7 @@
 import sys
+import math
 from collections import namedtuple
+from random import shuffle
 
 
 Point = namedtuple('Point', ['x', 'y'])
@@ -13,9 +15,32 @@ def main(input_file, output_file, time):
 
     nodes = read_nodes(input_file)
     print(nodes)
+
+    cost, tour = random_tour(nodes)
     
-    tour = [0, 3, 20, 4, 5, 10]
-    write_results(69, tour)
+    write_results(cost, tour)
+
+def euclidean_distance(p1, p2):
+    """
+    Returns the euclidean distance between two points
+    """
+    return int(math.sqrt((p1.x - p2.x)**2 + (p1.x - p2.x)**2))
+
+
+def random_tour(points):
+    """
+    Returns cost and path of a random tour
+    """
+    tour = [x for x in range(len(points))]
+    shuffle(tour)
+
+    tour.append(tour[0])
+
+    cost = 0
+    for i in range(len(tour) - 1):
+        cost += euclidean_distance(points[tour[i]], points[tour[i + 1]])
+
+    return (cost, tour)
 
 
 def read_nodes(input_file):
