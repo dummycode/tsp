@@ -20,6 +20,7 @@ def main(input_file, output_file, time):
     
     write_results(cost, tour)
 
+
 def euclidean_distance(p1, p2):
     """
     Returns the euclidean distance between two points
