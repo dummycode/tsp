@@ -153,15 +153,16 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
             reduction = row_reduce(new_adj) + col_reduce(new_adj)
 
             total_cost = heuristic + cost + reduction
+            new_level = level + 1
 
-            if total_cost < final_cost.value: 
+            if total_cost < final_cost.value and not (new_level < N / 2 and heuristic*2 > final_cost.value): 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost / (level + 1)**1.10, total_cost, new_adj, level + 1, curr_path[:], new_visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_adj, new_level, curr_path[:], new_visited[:]))
 
             else:
                 # print("Not going there cause it's too expensive")
@@ -191,7 +192,7 @@ def tsp(adj):
     heapq.heappush(horizon, Horizon(heuristic, heuristic, adj, 1, curr_path, visited))
     while len(horizon) > 0:
         order, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
-        if heuristic < final_cost.value:
+        if heuristic < final_cost.value and not (level < N/2 and heuristic*2 > final_cost.value):
             tsp_helper(heuristic, adj, level, curr_path, visited) 
         else:
             continue
@@ -278,7 +279,7 @@ def write_results(cost, tour):
     f.write("\n")
 
     for node in tour:
-        f.write("{} ".format(node))
+        f.write("{} ".format(node + 1))
 
     f.write("\n")
     f.close()
@@ -324,6 +325,6 @@ if __name__ == "__main__":
 
         print("Minimum cost: {}".format(int(final_cost.value)))
         for node in final_tour:
-            print("{} ".format(node), end="")
+            print("{} ".format(node + 1), end="")
         print()
     
