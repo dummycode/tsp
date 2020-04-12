@@ -186,13 +186,18 @@ def tsp(adj):
 
     global max_level
     max_level = -1
+    
+    total = 0
 
     # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
     heapq.heappush(horizon, Horizon(heuristic, heuristic, adj, 1, curr_path, visited))
     while len(horizon) > 0:
         order, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
-        if heuristic < final_cost.value and not (level < N/2 and heuristic*2 > final_cost.value):
+        if heuristic < final_cost.value:
+            total += 1
+            if total % 1000 == 0:
+                print("Checking {}th node".format(total))
             tsp_helper(heuristic, adj, level, curr_path, visited) 
         else:
             continue
