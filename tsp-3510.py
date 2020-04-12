@@ -14,7 +14,7 @@ from pprint import pprint
 
 # Types
 Point = namedtuple('Point', ['x', 'y'])
-Horizon = namedtuple('Horizon', ['order', 'heuristic', 'curr_bound', 'distances', 'level', 'curr_path', 'visited'])
+Horizon = namedtuple('Horizon', ['order', 'heuristic', 'distances', 'level', 'curr_path', 'visited'])
 
 
 # Constants
@@ -72,30 +72,6 @@ def update_final(curr_path, curr_cost):
     print("Updated final to {}".format(curr_cost))
 
 
-def first_min(adj, i): 
-    min_val = INF 
-    for k in range(N): 
-        if adj[i][k] < min_val and i != k: 
-            min_val = adj[i][k] 
-  
-    return min_val
-  
-
-def second_min(adj, i): 
-    first = second = INF
-    for j in range(N): 
-        if i == j: 
-            continue
-        if adj[i][j] <= first: 
-            second = first 
-            first = adj[i][j] 
-  
-        elif adj[i][j] <= second and adj[i][j] != first: 
-            second = adj[i][j] 
-  
-    return second 
-
-
 def row_reduce(adj):
     total = 0
     for i, row in enumerate(adj):
@@ -139,7 +115,7 @@ def set_inf(adj, row, col):
         adj[i][col] = INF
 
 
-def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited): 
+def tsp_helper(heuristic, adj, level, curr_path, visited): 
     """
     Helper function to build the path
     adj: Adjacency matrix
@@ -177,19 +153,14 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
 
             total_cost = heuristic + cost + reduction
 
-            if level == 1: 
-                curr_bound -= (first_min(adj, prev) + first_min(adj, i)) / 2 
-            else: 
-                curr_bound -= (second_min(adj, prev) + first_min(adj, i)) / 2 
-
-            if curr_bound + total_cost < final_cost.value: 
+            if total_cost < final_cost.value: 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost / (level + 1), total_cost, curr_bound, new_adj, level + 1, curr_path[:], new_visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / (level + 1), total_cost, new_adj, level + 1, curr_path[:], new_visited[:]))
 
             else:
                 continue
@@ -210,27 +181,17 @@ def tsp(adj):
     # in curr_path[] is 0 
     visited[0] = True
     curr_path[0] = 0
-    lower_bound = 0
-  
-    # Compute initial bound 
-    for i in range(N): 
-        lower_bound += first_min(adj, i) + second_min(adj, i) 
-  
-    # Rounding off the lower bound to an integer 
-    lower_bound = int(lower_bound / 2) 
-
-    print("Lower bound is {}".format(lower_bound))
 
     global max_level
     max_level = -1
 
     # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
-    heapq.heappush(horizon, Horizon(heuristic, heuristic, lower_bound, adj, 1, curr_path, visited))
+    heapq.heappush(horizon, Horizon(heuristic, heuristic, adj, 1, curr_path, visited))
     while len(horizon) > 0:
-        _, heuristic, curr_bound, adj, level, curr_path, visited = heapq.heappop(horizon)
+        _, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
         if heuristic < final_cost.value:
-            tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited) 
+            tsp_helper(heuristic, adj, level, curr_path, visited) 
         else:
             continue
             # print("Not exploring because cost is too high")
