@@ -51,6 +51,7 @@ def main():
     print("Program started ({}, {}, {})".format(input_file, output_file, time))
 
     gen_distances(nodes)
+    print(distances)
 
     tsp(distances) 
 
@@ -153,7 +154,7 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
 
             total_cost = heuristic + cost + reduction
 
-            if total_cost < final_cost.value: 
+            if total_cost < final_cost.value and total_cost / (level + 1) < 1.20 * (final_cost.value / N): 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
@@ -163,8 +164,8 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
                 heapq.heappush(horizon, Horizon(total_cost / (level + 1), total_cost, new_adj, level + 1, curr_path[:], new_visited[:]))
 
             else:
+                # print("Not going there cause it's too expensive")
                 continue
-                #print("Not going there cause it's too expensive")
 
 
 def tsp(adj): 
@@ -189,7 +190,7 @@ def tsp(adj):
     # equal to 0 and level 1 
     heapq.heappush(horizon, Horizon(heuristic, heuristic, adj, 1, curr_path, visited))
     while len(horizon) > 0:
-        _, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
+        order, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
         if heuristic < final_cost.value:
             tsp_helper(heuristic, adj, level, curr_path, visited) 
         else:
