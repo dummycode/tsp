@@ -14,7 +14,7 @@ from pprint import pprint
 
 # Types
 Point = namedtuple('Point', ['x', 'y'])
-Horizon = namedtuple('Horizon', ['heuristic', 'curr_bound', 'distances', 'level', 'curr_path', 'visited'])
+Horizon = namedtuple('Horizon', ['order', 'heuristic', 'curr_bound', 'distances', 'level', 'curr_path', 'visited'])
 
 
 # Constants
@@ -148,10 +148,10 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
     visited: Nodes in the path
     """
     #print("Perfoming tsp helper at {} cost {}".format(curr_path[level - 1], heuristic))
-    global min_level
-    if level > min_level:
+    global max_level
+    if level > max_level:
         print("Exploring level {}".format(level))
-        min_level = level
+        max_level = level
 
     # At leaf node
     if level == N: 
@@ -182,14 +182,14 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
             else: 
                 curr_bound -= (second_min(adj, prev) + first_min(adj, i)) / 2 
 
-            if total_cost < final_cost.value: 
+            if curr_bound + total_cost < final_cost.value: 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost, curr_bound, new_adj, level + 1, curr_path[:], visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / (level + 1), total_cost, curr_bound, new_adj, level + 1, curr_path[:], new_visited[:]))
 
             else:
                 continue
@@ -221,18 +221,19 @@ def tsp(adj):
 
     print("Lower bound is {}".format(lower_bound))
 
-    global min_level
-    min_level = -1
+    global max_level
+    max_level = -1
 
     # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
-    heapq.heappush(horizon, Horizon(heuristic, lower_bound, adj, 1, curr_path, visited))
+    heapq.heappush(horizon, Horizon(heuristic, heuristic, lower_bound, adj, 1, curr_path, visited))
     while len(horizon) > 0:
-        heuristic, curr_bound, adj, level, curr_path, visited = heapq.heappop(horizon)
+        _, heuristic, curr_bound, adj, level, curr_path, visited = heapq.heappop(horizon)
         if heuristic < final_cost.value:
             tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited) 
         else:
-            print("Not exploring because cost is too high")
+            continue
+            # print("Not exploring because cost is too high")
 
 
 def gen_distances(nodes):
@@ -360,14 +361,4 @@ if __name__ == "__main__":
     for node in final_tour:
         print("{} ".format(node), end="")
     print()
-
-    min_value = float('inf')
-    gen_distances(nodes)
-    for i in range(100000):
-        cost, tour = random_tour()
-        if cost < min_value:
-            print(tour)
-            min_value = cost
-    print(min_value)
-        
     
