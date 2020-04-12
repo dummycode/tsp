@@ -207,7 +207,7 @@ def tsp_helper(heuristic, lower_bound, level, curr_path, visited):
                 new_lower_bound -= (second_mins[prev] + first_mins[i]) / 2
 
 
-            if new_lower_bound + total_cost < final_cost.value: 
+            if new_lower_bound + total_cost < final_cost.value and not (False): 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
@@ -256,7 +256,7 @@ def tsp(adj):
     heapq.heappush(horizon, Horizon(heuristic, heuristic, lower_bound, 1, curr_path, visited))
     while len(horizon) > 0:
         order, heuristic, lower_bound, level, curr_path, visited = heapq.heappop(horizon)
-        if heuristic < final_cost.value:
+        if lower_bound + heuristic < final_cost.value:
             total += 1
             if total % 10000 == 0:
                 print("Checking {}th node".format(total))
