@@ -14,7 +14,7 @@ from pprint import pprint
 
 # Types
 Point = namedtuple('Point', ['x', 'y'])
-Horizon = namedtuple('Horizon', ['order', 'heuristic', 'distances', 'level', 'curr_path', 'visited'])
+Horizon = namedtuple('Horizon', ['order', 'heuristic', 'level', 'curr_path', 'visited'])
 
 
 # Constants
@@ -107,6 +107,36 @@ def col_reduce(adj):
     return total
 
 
+def first_min(adj, i): 
+    """
+    Finds the minimum edge cost from any node to node i
+    """
+    min = INF 
+    for k in range(N): 
+        if adj[i][k] < min and i != k: 
+            min = adj[i][k] 
+
+    return min
+
+
+def second_min(adj, i): 
+    """
+    Finds the second minimum edge cost from any node to node i
+    """
+    first, second = INF, INF 
+    for j in range(N): 
+        if i == j: 
+            continue
+        if adj[i][j] <= first: 
+            second = first 
+            first = adj[i][j] 
+
+        elif(adj[i][j] <= second and adj[i][j] != first): 
+            second = adj[i][j] 
+
+    return second 
+
+
 def set_inf(adj, row, col):
     """
     Set a given row and column to infinity
@@ -116,7 +146,7 @@ def set_inf(adj, row, col):
         adj[i][col] = INF
 
 
-def tsp_helper(heuristic, adj, level, curr_path, visited): 
+def tsp_helper(heuristic, level, curr_path, visited): 
     """
     Helper function to build the path
     adj: Adjacency matrix
@@ -132,7 +162,9 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
 
     # At leaf node
     if level == N: 
-        curr_res = heuristic 
+        prev = curr_path[level - 1]
+        cost_to_return = get_distance(prev, 0) # Gotta go back to 0
+        curr_res = heuristic + cost_to_return
         if curr_res < final_cost.value: 
             update_final(curr_path, curr_res) 
         return
@@ -143,26 +175,19 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
         # If not already visited
         if not visited[i]: 
             prev = curr_path[level - 1]
-            cost = adj[prev][i]
+            cost = get_distance(prev, i)
 
-            new_adj = deepcopy(adj)
-
-            set_inf(new_adj, prev, i) 
-            new_adj[i][0] = float('inf')
-                
-            reduction = row_reduce(new_adj) + col_reduce(new_adj)
-
-            total_cost = heuristic + cost + reduction
+            total_cost = heuristic + cost
             new_level = level + 1
 
-            if total_cost < final_cost.value and not (new_level < N / 2 and heuristic*2 > final_cost.value): 
+            if total_cost < final_cost.value and not (heuristic / level) > 1.2 * (final_cost.value / N): 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_adj, new_level, curr_path[:], new_visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_level, curr_path[:], new_visited[:]))
 
             else:
                 # print("Not going there cause it's too expensive")
@@ -176,7 +201,8 @@ def tsp(adj):
     curr_path = [-1] * (N + 1) 
     visited = [False] * N 
 
-    heuristic = row_reduce(adj) + col_reduce(adj)
+    heuristic = 0
+    # heuristic = row_reduce(adj) + col_reduce(adj)
     print("Reduced cost at start is {}".format(heuristic))
 
     # We start at vertex 1 so the first vertex 
@@ -191,14 +217,14 @@ def tsp(adj):
 
     # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
-    heapq.heappush(horizon, Horizon(heuristic, heuristic, adj, 1, curr_path, visited))
+    heapq.heappush(horizon, Horizon(heuristic, heuristic, 1, curr_path, visited))
     while len(horizon) > 0:
-        order, heuristic, adj, level, curr_path, visited = heapq.heappop(horizon)
-        if heuristic < final_cost.value:
+        order, heuristic, level, curr_path, visited = heapq.heappop(horizon)
+        if heuristic < final_cost.value and not (heuristic / level) > 1.2 * (final_cost.value / N):
             total += 1
-            if total % 1000 == 0:
+            if total % 10000 == 0:
                 print("Checking {}th node".format(total))
-            tsp_helper(heuristic, adj, level, curr_path, visited) 
+            tsp_helper(heuristic, level, curr_path, visited) 
         else:
             continue
             # print("Not exploring because cost is too high")
