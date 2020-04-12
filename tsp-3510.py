@@ -23,7 +23,17 @@ INF = float('inf')
 
 # Process variables
 nodes = []
+"""
+distances = [
+    [float('inf'), 20, 30, 10, 11],
+    [15, float('inf'), 16, 4, 2],
+    [3, 5, float('inf'), 2, 4],
+    [19, 6, 18, float('inf'), 3],
+    [16, 4, 7, 16, float('inf')],
+       ]
+"""
 distances = []
+
 horizon = []
 
 # Keeps track of visited nodes in a particular path
@@ -121,9 +131,12 @@ def col_reduce(adj):
 
 
 def set_inf(adj, row, col):
+    """
+    Set a given row and column to infinity
+    """
     adj[row] = [INF] * N
     for i in range(N):
-        adj[row][col] = INF
+        adj[i][col] = INF
 
 
 def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited): 
@@ -134,6 +147,7 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
     curr_path: Path we are building
     visited: Nodes in the path
     """
+    #print("Perfoming tsp helper at {} cost {}".format(curr_path[level - 1], heuristic))
     global min_level
     if level > min_level:
         print("Exploring level {}".format(level))
@@ -148,6 +162,7 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
 
     # Iterate through all vertices
     for i in range(N): 
+        #print(i)
         # If not already visited
         if not visited[i]: 
             prev = curr_path[level - 1]
@@ -163,19 +178,22 @@ def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited):
             total_cost = heuristic + cost + reduction
 
             if level == 1: 
-                curr_bound -= (first_min(adj, prev) + second_min(adj, i)) / 2 
+                curr_bound -= (first_min(adj, prev) + first_min(adj, i)) / 2 
             else: 
                 curr_bound -= (second_min(adj, prev) + first_min(adj, i)) / 2 
 
-            if curr_bound + total_cost < final_cost.value: 
+            if total_cost < final_cost.value: 
                 curr_path[level] = i 
-                visited[i] = True
+                new_visited = visited[:]
+                new_visited[i] = True
 
                 # Push to heap
+                #print("Adding {} with cost {}".format(i, total_cost))
                 heapq.heappush(horizon, Horizon(total_cost, curr_bound, new_adj, level + 1, curr_path[:], visited[:]))
 
             else:
-                print("Not going there cause it's too expensive")
+                continue
+                #print("Not going there cause it's too expensive")
 
 
 def tsp(adj): 
@@ -234,6 +252,8 @@ def gen_distances(nodes):
             else:
                 distances[i][j] = euclidean_distance(n1, n2)
 
+    return
+
     # Convert to to numpy array
     global distances_np
     distances_np = np.array(distances)
@@ -254,11 +274,11 @@ def euclidean_distance(p1, p2):
     return int(math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2))
 
 
-def random_tour(points):
+def random_tour():
     """
     Returns cost and path of a random tour
     """
-    tour = [x for x in range(len(points))]
+    tour = [x for x in range(N)]
     shuffle(tour)
 
     tour.append(tour[0])
@@ -340,3 +360,14 @@ if __name__ == "__main__":
     for node in final_tour:
         print("{} ".format(node), end="")
     print()
+
+    min_value = float('inf')
+    gen_distances(nodes)
+    for i in range(100000):
+        cost, tour = random_tour()
+        if cost < min_value:
+            print(tour)
+            min_value = cost
+    print(min_value)
+        
+    
