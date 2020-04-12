@@ -1,14 +1,20 @@
 import sys
+import heapq
 import multiprocessing
 import math
+import random
 import numpy as np
+
+from copy import copy, deepcopy
 from collections import namedtuple
 from random import shuffle
 from ctypes import c_char_p
+from pprint import pprint
 
 
 # Types
 Point = namedtuple('Point', ['x', 'y'])
+Horizon = namedtuple('Horizon', ['heuristic', 'curr_bound', 'distances', 'level', 'curr_path', 'visited'])
 
 
 # Constants
@@ -18,10 +24,11 @@ INF = float('inf')
 # Process variables
 nodes = []
 distances = []
-tour = None
+horizon = []
 
 # Keeps track of visited nodes in a particular path
 visited = None
+
 
 
 # Global variables
@@ -35,143 +42,179 @@ def main():
 
     gen_distances(nodes)
 
-    print(distances)
-
-    min_cost = float("inf")
-    min_tour = None
-
-    global tour
-
-    tour = [None] * (N + 1)
-
-    TSP(distances) 
+    tsp(distances) 
 
 
-def updateFinal(curr_path): 
+def update_final(curr_path, curr_cost): 
     """
     Update the final path with the current path
     """
-    global tour
+    print("Found new minimum tour!")
 
-    tour[:N + 1] = curr_path[:] 
-    tour[N] = curr_path[0] 
+    # Update final tour to curr_path
+    final_tour[:N + 1] = curr_path
+    # Add start back to end
+    final_tour[N] = curr_path[0]
 
-    final_tour[:] = tour
+    # Update final cost to curr cost
+    final_cost.value = curr_cost
+
+    print("Updated final to {}".format(curr_cost))
 
 
-def firstMin(adj, i): 
-    """
-    Finds the minimum edge cost from any node to node i
-    """
-    min = INF 
+def first_min(adj, i): 
+    min_val = INF 
     for k in range(N): 
-        if adj[i][k] < min and i != k: 
-            min = adj[i][k] 
+        if adj[i][k] < min_val and i != k: 
+            min_val = adj[i][k] 
+  
+    return min_val
+  
 
-    return min
-
-
-def secondMin(adj, i): 
-    """
-    Finds the second minimum edge cost from any node to node i
-    """
-    first, second = INF, INF 
+def second_min(adj, i): 
+    first = second = INF
     for j in range(N): 
         if i == j: 
             continue
         if adj[i][j] <= first: 
             second = first 
             first = adj[i][j] 
-
-        elif(adj[i][j] <= second and adj[i][j] != first): 
+  
+        elif adj[i][j] <= second and adj[i][j] != first: 
             second = adj[i][j] 
-
+  
     return second 
 
 
-# function that takes as arguments: 
-# curr_bound -> lower bound of the root node 
-# curr_weight-> stores the weight of the path so far 
-# level-> current level while moving 
-# in the search space tree 
-# curr_path[] -> where the solution is being stored 
-# which would later be copied to tour[] 
-def TSPRec(adj, curr_bound, curr_weight, level, curr_path, visited): 
+def row_reduce(adj):
+    total = 0
+    for i, row in enumerate(adj):
+        min_val = float('inf')
+        for col in row:
+            min_val = min(col, min_val)
+
+        # If not inf, reduce row
+        if min_val != float('inf'):
+            for j, col in enumerate(row):
+                adj[i][j] = adj[i][j] - min_val
+
+            total += min_val
+
+    return total
+
+
+def col_reduce(adj):
+    total = 0
+    for j in range(N):
+        min_val = float('inf')
+        for i in range(N):
+            min_val = min(adj[i][j], min_val)
+
+        # If not inf, reduce row
+        if min_val != float('inf'):
+            for i in range(N):
+                adj[i][j] = adj[i][j] - min_val
+
+            total += min_val
+
+    return total
+
+
+def set_inf(adj, row, col):
+    adj[row] = [INF] * N
+    for i in range(N):
+        adj[row][col] = INF
+
+
+def tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited): 
+    """
+    Helper function to build the path
+    adj: Adjacency matrix
+    level: Current level
+    curr_path: Path we are building
+    visited: Nodes in the path
+    """
+    global min_level
+    if level > min_level:
+        print("Exploring level {}".format(level))
+        min_level = level
+
     # At leaf node
     if level == N: 
-        # curr_res has the total weight 
-        # of the solution we got 
-        curr_res = curr_weight + adj[curr_path[level - 1]][curr_path[0]] 
+        curr_res = heuristic 
         if curr_res < final_cost.value: 
-            updateFinal(curr_path) 
-            final_cost.value = curr_res 
+            update_final(curr_path, curr_res) 
         return
 
-    # for any other level iterate for all vertices 
-    # to build the search space tree recursively 
+    # Iterate through all vertices
     for i in range(N): 
-        # Consider next vertex if it is not same 
-        # (diagonal entry in adjacency matrix and 
-        # not visited already) 
-        if (adj[curr_path[level-1]][i] != 0 and
-                visited[i] == False): 
-            temp = curr_bound 
-            curr_weight += adj[curr_path[level - 1]][i] 
+        # If not already visited
+        if not visited[i]: 
+            prev = curr_path[level - 1]
+            cost = adj[prev][i]
 
-            # different computation of curr_bound 
-            # for level 2 from the other levels 
+            new_adj = deepcopy(adj)
+
+            set_inf(new_adj, prev, i) 
+            new_adj[i][0] = float('inf')
+                
+            reduction = row_reduce(new_adj) + col_reduce(new_adj)
+
+            total_cost = heuristic + cost + reduction
+
             if level == 1: 
-                curr_bound -= ((firstMin(adj, curr_path[level - 1]) + firstMin(adj, i)) / 2) 
+                curr_bound -= (first_min(adj, prev) + second_min(adj, i)) / 2 
             else: 
-                curr_bound -= ((secondMin(adj, curr_path[level - 1]) + firstMin(adj, i)) / 2) 
+                curr_bound -= (second_min(adj, prev) + first_min(adj, i)) / 2 
 
-            # curr_bound + curr_weight is the actual lower bound 
-            # for the node that we have arrived on. 
-            # If current lower bound < final_cost.value, 
-            # we need to explore the node further 
-            if curr_bound + curr_weight < final_cost.value: 
+            if curr_bound + total_cost < final_cost.value: 
                 curr_path[level] = i 
                 visited[i] = True
 
-                # call TSPRec for the next level 
-                TSPRec(adj, curr_bound, curr_weight, level + 1, curr_path, visited) 
+                # Push to heap
+                heapq.heappush(horizon, Horizon(total_cost, curr_bound, new_adj, level + 1, curr_path[:], visited[:]))
 
-            # Else we have to prune the node by resetting 
-            # all changes to curr_weight and curr_bound 
-            curr_weight -= adj[curr_path[level - 1]][i] 
-            curr_bound = temp 
-
-            # Also reset the visited array 
-            visited = [False] * len(visited) 
-            for j in range(level): 
-                if curr_path[j] != -1: 
-                    visited[curr_path[j]] = True
+            else:
+                print("Not going there cause it's too expensive")
 
 
-# This function sets up tour 
-def TSP(adj): 
-    # Calculate initial lower bound for the root node 
-    # using the formula 1/2 * (sum of first min + 
-    # second min) for all edges. Also initialize the 
-    # curr_path and visited array 
-    curr_bound = 0
+def tsp(adj): 
+    """
+    Set up the tour and call the helper function
+    """
     curr_path = [-1] * (N + 1) 
     visited = [False] * N 
 
-    # Compute initial bound 
-    for i in range(N): 
-        curr_bound += (firstMin(adj, i) + secondMin(adj, i)) 
-
-    curr_bound = int(curr_bound / 2) 
+    heuristic = row_reduce(adj) + col_reduce(adj)
+    print("Reduced cost at start is {}".format(heuristic))
 
     # We start at vertex 1 so the first vertex 
     # in curr_path[] is 0 
     visited[0] = True
     curr_path[0] = 0
+    lower_bound = 0
+  
+    # Compute initial bound 
+    for i in range(N): 
+        lower_bound += first_min(adj, i) + second_min(adj, i) 
+  
+    # Rounding off the lower bound to an integer 
+    lower_bound = int(lower_bound / 2) 
 
-    # Call to TSPRec for curr_weight 
+    print("Lower bound is {}".format(lower_bound))
+
+    global min_level
+    min_level = -1
+
+    # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
-    TSPRec(adj, curr_bound, 0, 1, curr_path, visited) 
+    heapq.heappush(horizon, Horizon(heuristic, lower_bound, adj, 1, curr_path, visited))
+    while len(horizon) > 0:
+        heuristic, curr_bound, adj, level, curr_path, visited = heapq.heappop(horizon)
+        if heuristic < final_cost.value:
+            tsp_helper(heuristic, curr_bound, adj, level, curr_path, visited) 
+        else:
+            print("Not exploring because cost is too high")
 
 
 def gen_distances(nodes):
@@ -186,7 +229,10 @@ def gen_distances(nodes):
 
     for i, n1 in enumerate(nodes):
         for j, n2 in enumerate(nodes):
-            distances[i][j] = euclidean_distance(n1, n2)
+            if i == j:
+                distances[i][j] = float('inf')
+            else:
+                distances[i][j] = euclidean_distance(n1, n2)
 
     # Convert to to numpy array
     global distances_np
