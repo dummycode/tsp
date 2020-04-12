@@ -212,7 +212,7 @@ def tsp_helper(heuristic, lower_bound, level, curr_path, visited):
                 new_visited = visited[:]
                 new_visited[i] = True
 
-                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_lower_bound, new_level, curr_path[:], new_visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / new_level**1.05, total_cost, new_lower_bound, new_level, curr_path[:], new_visited[:]))
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
 
