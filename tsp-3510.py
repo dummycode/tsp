@@ -154,14 +154,14 @@ def tsp_helper(heuristic, adj, level, curr_path, visited):
 
             total_cost = heuristic + cost + reduction
 
-            if total_cost < final_cost.value and total_cost / (level + 1) < 1.20 * (final_cost.value / N): 
+            if total_cost < final_cost.value: 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost / (level + 1), total_cost, new_adj, level + 1, curr_path[:], new_visited[:]))
+                heapq.heappush(horizon, Horizon(total_cost / (level + 1)**1.10, total_cost, new_adj, level + 1, curr_path[:], new_visited[:]))
 
             else:
                 # print("Not going there cause it's too expensive")
@@ -317,10 +317,13 @@ if __name__ == "__main__":
         p.terminate()
         p.join()
 
-    write_results(final_cost.value, final_tour[:])
+    if final_cost.value == float('inf'):
+        print("Unfortunately, our algorithm was unable to compute a valid path within the alloted time ({}s). Please try a smaller problem set or increase the time limit.".format(time))
+    else:
+        write_results(final_cost.value, final_tour[:])
 
-    print("Minimum cost: {}".format(int(final_cost.value)))
-    for node in final_tour:
-        print("{} ".format(node), end="")
-    print()
+        print("Minimum cost: {}".format(int(final_cost.value)))
+        for node in final_tour:
+            print("{} ".format(node), end="")
+        print()
     
