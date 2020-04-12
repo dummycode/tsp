@@ -14,7 +14,7 @@ from pprint import pprint
 
 # Types
 Point = namedtuple('Point', ['x', 'y'])
-Horizon = namedtuple('Horizon', ['order', 'heuristic', 'level', 'curr_path', 'visited'])
+Horizon = namedtuple('Horizon', ['order', 'heuristic', 'lower_bound', 'level', 'curr_path', 'visited'])
 
 
 # Constants
@@ -52,6 +52,10 @@ def main():
 
     gen_distances(nodes)
     print(distances)
+
+    global first_mins, second_mins
+    first_mins = [INF] * N
+    second_mins = [INF] * N
 
     tsp(distances) 
 
@@ -106,33 +110,48 @@ def col_reduce(adj):
 
     return total
 
+def gen_mins():
+    """
+    Pre-gen all first and second min distances
+    """
+    for i in range(N):
+        first_mins[i] = first_min(i)
+        second_mins[i] = second_min(i)
 
-def first_min(adj, i): 
+
+def first_min(i): 
     """
     Finds the minimum edge cost from any node to node i
     """
-    min = INF 
-    for k in range(N): 
-        if adj[i][k] < min and i != k: 
-            min = adj[i][k] 
+    min_dist = INF 
+    for j in range(N): 
+        if i != j:
+            dist = get_distance(i, j)
+            min_dist = min(dist, min_dist) 
 
-    return min
+    if min_dist == INF:
+        print(i)
+
+    return min_dist
 
 
-def second_min(adj, i): 
+def second_min(i): 
     """
     Finds the second minimum edge cost from any node to node i
     """
-    first, second = INF, INF 
+    first = second = INF
     for j in range(N): 
         if i == j: 
             continue
-        if adj[i][j] <= first: 
-            second = first 
-            first = adj[i][j] 
 
-        elif(adj[i][j] <= second and adj[i][j] != first): 
-            second = adj[i][j] 
+        dist = get_distance(i, j)
+
+        if dist <= first: 
+            second = first 
+            first = dist  
+
+        elif dist <= second and dist != first: 
+            second = dist 
 
     return second 
 
@@ -146,7 +165,7 @@ def set_inf(adj, row, col):
         adj[i][col] = INF
 
 
-def tsp_helper(heuristic, level, curr_path, visited): 
+def tsp_helper(heuristic, lower_bound, level, curr_path, visited): 
     """
     Helper function to build the path
     adj: Adjacency matrix
@@ -169,10 +188,10 @@ def tsp_helper(heuristic, level, curr_path, visited):
             update_final(curr_path, curr_res) 
         return
 
+        # If not already visited
     # Iterate through all vertices
     for i in range(N): 
         #print(i)
-        # If not already visited
         if not visited[i]: 
             prev = curr_path[level - 1]
             cost = get_distance(prev, i)
@@ -180,14 +199,22 @@ def tsp_helper(heuristic, level, curr_path, visited):
             total_cost = heuristic + cost
             new_level = level + 1
 
-            if total_cost < final_cost.value and not (heuristic / level) > 1.2 * (final_cost.value / N): 
+
+            new_lower_bound = lower_bound
+            if level == 1: 
+                new_lower_bound -= (first_mins[prev] + first_mins[i]) / 2
+            else: 
+                new_lower_bound -= (second_mins[prev] + first_mins[i]) / 2
+
+
+            if new_lower_bound + total_cost < final_cost.value: 
                 curr_path[level] = i 
                 new_visited = visited[:]
                 new_visited[i] = True
 
+                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_lower_bound, new_level, curr_path[:], new_visited[:]))
                 # Push to heap
                 #print("Adding {} with cost {}".format(i, total_cost))
-                heapq.heappush(horizon, Horizon(total_cost / new_level, total_cost, new_level, curr_path[:], new_visited[:]))
 
             else:
                 # print("Not going there cause it's too expensive")
@@ -215,16 +242,25 @@ def tsp(adj):
     
     total = 0
 
+    gen_mins()
+    # Compute initial bound 
+    lower_bound = 0
+    for i in range(N): 
+        lower_bound += (first_mins[i] + second_mins[i]) 
+
+    lower_bound = int(lower_bound / 2) 
+    print("Starting with lower bound of {}".format(lower_bound))
+
     # Call to tsp_helper for curr_weight 
     # equal to 0 and level 1 
-    heapq.heappush(horizon, Horizon(heuristic, heuristic, 1, curr_path, visited))
+    heapq.heappush(horizon, Horizon(heuristic, heuristic, lower_bound, 1, curr_path, visited))
     while len(horizon) > 0:
-        order, heuristic, level, curr_path, visited = heapq.heappop(horizon)
-        if heuristic < final_cost.value and not (heuristic / level) > 1.2 * (final_cost.value / N):
+        order, heuristic, lower_bound, level, curr_path, visited = heapq.heappop(horizon)
+        if heuristic < final_cost.value:
             total += 1
             if total % 10000 == 0:
                 print("Checking {}th node".format(total))
-            tsp_helper(heuristic, level, curr_path, visited) 
+            tsp_helper(heuristic, lower_bound, level, curr_path, visited) 
         else:
             continue
             # print("Not exploring because cost is too high")
@@ -243,15 +279,11 @@ def gen_distances(nodes):
     for i, n1 in enumerate(nodes):
         for j, n2 in enumerate(nodes):
             if i == j:
-                distances[i][j] = float('inf')
+                distances[i][j] = 0
             else:
                 distances[i][j] = euclidean_distance(n1, n2)
 
     return
-
-    # Convert to to numpy array
-    global distances_np
-    distances_np = np.array(distances)
 
 
 def get_distance(n1, n2):
