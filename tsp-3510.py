@@ -38,6 +38,7 @@ horizon = []
 
 # Keeps track of visited nodes in a particular path
 visited = None
+found = False
 
 
 
@@ -65,6 +66,8 @@ def update_final(curr_path, curr_cost):
     Update the final path with the current path
     """
     print("Found new minimum tour!")
+    global found
+    found = True
 
     # Update final tour to curr_path
     final_tour[:N + 1] = curr_path
@@ -212,10 +215,18 @@ def tsp_helper(heuristic, lower_bound, level, curr_path, visited):
                 new_visited = visited[:]
                 new_visited[i] = True
 
-                order = total_cost / new_level**1.25
+                global found
 
-                if final_cost.value != INF:
+                if found:
+                    order = total_cost / new_level
+                elif max_level < 0.25 * N:
+                    order = total_cost / new_level**1.20
+                elif max_level < 0.5 * N:
                     order = total_cost / new_level**1.15
+                elif max_level < 0.75 * N:
+                    order = total_cost / new_level**1.10
+                else:
+                    order = total_cost / new_level**1.05
 
                 heapq.heappush(horizon, Horizon(order, total_cost, new_lower_bound, new_level, curr_path[:], new_visited[:]))
                 # Push to heap
@@ -303,7 +314,7 @@ def euclidean_distance(p1, p2):
     """
     Returns the euclidean distance between two points
     """
-    return int(math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2))
+    return int(round(math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)))
 
 
 def random_tour():
