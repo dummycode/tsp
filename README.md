@@ -1,5 +1,5 @@
 # TSP Solver
-Traveling Salesman Problem Solver written by Henry Harris <mail@henryharr.is> and Molly Williams.
+Traveling Salesman Problem Solver written by Henry Harris \<<mail@henryharr.is>\> and Molly Williams.
 
 ### Usage
 ```
