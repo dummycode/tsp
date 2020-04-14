@@ -6,12 +6,13 @@ Henry Harris \<<hth@gatech.edu>\>
 Molly Williams \<<mwilliams401@gatech.edu>\>
 
 ### Files
+|  File 	|  Description |
+|--- |--- |
 | tsp-py3510 | Driver file for our TSP solver |
 | mat-test.txt | Test input file |
 | output-tour.txt | Test output file |
-| README.md | This markdown file |
+| README.md | This markdown file |### Usage
 
-### Usage
 ```
 python3 tsp-3510.py <input file> <output file> <time limit>
 ```
