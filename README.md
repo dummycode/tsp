@@ -11,8 +11,9 @@ Molly Williams \<<mwilliams401@gatech.edu>\>
 | tsp-py3510 | Driver file for our TSP solver |
 | mat-test.txt | Test input file |
 | output-tour.txt | Test output file |
-| README.md | This markdown file |### Usage
+| README.md | This markdown file |
 
+### Usage
 ```
 python3 tsp-3510.py <input file> <output file> <time limit>
 ```
