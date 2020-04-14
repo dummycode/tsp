@@ -2,7 +2,7 @@
 Traveling Salesman Problem Solver
 
 ### Authors
-Henry Harris \<<hth@gatech.edu>\>
+Henry Harris \<<hth@gatech.edu>\> <br>
 Molly Williams \<<mwilliams401@gatech.edu>\>
 
 ### Files
