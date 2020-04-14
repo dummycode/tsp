@@ -340,7 +340,7 @@ if __name__ == "__main__":
     else:
         write_results(final_cost.value, final_tour[:])
 
-        print(final_cost.value)
+        print(int(final_cost.value))
         for node in final_tour:
             print("{} ".format(node + 1), end="")
         print()
