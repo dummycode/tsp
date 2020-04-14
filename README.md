@@ -1,8 +1,21 @@
 # TSP Solver
-Traveling Salesman Problem Solver written by Henry Harris \<<mail@henryharr.is>\> and Molly Williams.
+Traveling Salesman Problem Solver
+
+### Authors
+Henry Harris \<<hth@gatech.edu>\>
+Molly Williams \<<mwilliams401@gatech.edu>\>
+
+### Files
+| tsp-py3510 | Driver file for our TSP solver |
+| mat-test.txt | Test input file |
+| output-tour.txt | Test output file |
+| README.md | This markdown file |
 
 ### Usage
 ```
 python3 tsp-3510.py <input file> <output file> <time limit>
 ```
+
+### Bugs
+Our solver is running in a separate process that is joined and then terminated after the time has expired. Occasionally (< 5% of executions), this join hangs. Running the solver again fixes this issue.
 
