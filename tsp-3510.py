@@ -40,7 +40,7 @@ def main():
     first_mins = [INF] * N
     second_mins = [INF] * N
 
-    tsp(distances) 
+    tsp() 
 
 
 def update_final(curr_path, curr_cost): 
@@ -114,7 +114,8 @@ def second_min(i):
 def tsp_helper(heuristic, lower_bound, level, curr_path, visited): 
     """
     Helper function to build the path
-    adj: Adjacency matrix
+    heuristic: current total
+    lower_bound: lower bound of current path
     level: Current level
     curr_path: Path we are building
     visited: Nodes in the path
@@ -177,7 +178,7 @@ def tsp_helper(heuristic, lower_bound, level, curr_path, visited):
                 continue
 
 
-def tsp(adj): 
+def tsp(): 
     """
     Set up the tour and call the helper function
     """
