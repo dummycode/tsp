@@ -11,7 +11,6 @@ Molly Williams \<<mwilliams401@gatech.edu>\>
 | tsp.py | Driver file for our TSP solver |
 | mat-test.txt | Test input file |
 | output-tour.txt | Test output file |
-| algorithm.pdf | Our algorithm explained |
 | README.md | This markdown file |
 
 ### Usage
