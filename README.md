@@ -8,7 +8,7 @@ Molly Williams \<<mwilliams401@gatech.edu>\>
 ### Files
 |  File 	|  Description |
 |--- |--- |
-| tsp-py3510 | Driver file for our TSP solver |
+| tsp.py | Driver file for our TSP solver |
 | mat-test.txt | Test input file |
 | output-tour.txt | Test output file |
 | algorithm.pdf | Our algorithm explained |
@@ -16,7 +16,7 @@ Molly Williams \<<mwilliams401@gatech.edu>\>
 
 ### Usage
 ```
-python3 tsp-3510.py <input file> <output file> <time limit>
+python3 tsp.py <input file> <output file> <time limit>
 ```
 
 ### Bugs
